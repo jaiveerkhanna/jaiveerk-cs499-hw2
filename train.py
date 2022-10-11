@@ -7,6 +7,7 @@ from sklearn.metrics import accuracy_score
 from eval_utils import downstream_validation
 import utils
 import data_utils
+import numpy as np
 
 
 def setup_dataloader(args):
@@ -45,8 +46,35 @@ def setup_dataloader(args):
     # dataloaders.
     # ===================================================== #
 
-    train_loader = None
-    val_loader = None
+    context_size = 4
+    input_data = []  # Set of words associated with one
+    # Step 1: lets loop through the sentences and create pairs
+    for sentence in encoded_sentences:
+        # Within each sentence, we will create sentence length number of input/output combinations
+        for target in range(len(sentence)):
+            context_words = set()
+            target_word = [sentence[target]]
+            for context_word_id in range(target-context_size, target):
+                if (context_word_id < 0):
+                    continue
+                context_words.add(sentence[context_word_id])
+            input_data.append(context_words, target_word)
+
+    # Does this make sense
+    input_size = len(input_data)
+    train_np_x = np.zeros((input_size, context_size), dtype=np.int32)
+    train_np_y = np.zeros((input_size), dtype=np.int32)
+
+    train_dataset = TensorDataset(torch.from_numpy(
+        train_np_x), torch.from_numpy(train_np_y))
+    # val_dataset =
+
+    minibatch_size = 10
+
+    train_loader = DataLoader(
+        train_dataset, shuffle=True, batch_size=minibatch_size)
+    val_loader = DataLoader(
+        val_dataset, shuffle=True, batch_size=minibatch_size)
     return train_loader, val_loader
 
 
@@ -69,7 +97,7 @@ def setup_optimizer(args, model):
         - optimizer: torch.optim
     """
     # ================== TODO: CODE HERE ================== #
-    # Task: Initialize the loss function for predictions. 
+    # Task: Initialize the loss function for predictions.
     # Also initialize your optimizer.
     # ===================================================== #
     criterion = None
@@ -153,7 +181,8 @@ def main(args):
 
     if args.downstream_eval:
         word_vec_file = os.path.join(args.outputs_dir, args.word_vector_fn)
-        assert os.path.exists(word_vec_file), "need to train the word vecs first!"
+        assert os.path.exists(
+            word_vec_file), "need to train the word vecs first!"
         downstream_validation(word_vec_file, external_val_analogies)
         return
 
@@ -210,7 +239,6 @@ def main(args):
             # evaluate learned embeddings on a downstream task
             downstream_validation(word_vec_file, external_val_analogies)
 
-
         if epoch % args.save_every == 0:
             ckpt_file = os.path.join(args.output_dir, "model.ckpt")
             print("saving model to ", ckpt_file)
@@ -219,15 +247,17 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output_dir", type=str, help="where to save training outputs")
-    parser.add_argument("--data_dir", type=str, help="where the book dataset is stored")
+    parser.add_argument("--output_dir", type=str,
+                        help="where to save training outputs")
+    parser.add_argument("--data_dir", type=str,
+                        help="where the book dataset is stored")
     parser.add_argument(
         "--downstream_eval",
         action="store_true",
         help="run downstream eval on trained word vecs",
     )
     # ======================= NOTE ======================== #
-    # If you adjust the vocab_size down below 3000, there 
+    # If you adjust the vocab_size down below 3000, there
     # may be analogies in the downstream evaluation that have
     # words that are not in your vocabulary, resulting in
     # automatic (currently) zero score for an ABCD where one
