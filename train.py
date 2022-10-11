@@ -9,6 +9,7 @@ import utils
 import data_utils
 import numpy as np
 import model
+from torch.utils.data import TensorDataset, DataLoader  # pytorch
 
 
 def setup_dataloader(args):
@@ -19,7 +20,7 @@ def setup_dataloader(args):
     """
 
     # read in training data from books dataset
-    sentences = data_utils.process_book_dir(args.books_dir)
+    sentences = data_utils.process_book_dir(args.data_dir)
 
     # build one hot maps for input and output
     (
@@ -68,7 +69,9 @@ def setup_dataloader(args):
 
     train_dataset = TensorDataset(torch.from_numpy(
         train_np_x), torch.from_numpy(train_np_y))
-    # val_dataset =
+
+    # WRONG WRONG WRONG --> just doing to get code to run
+    val_dataset = train_dataset
 
     minibatch_size = args.batch_size
 
@@ -77,7 +80,7 @@ def setup_dataloader(args):
     val_loader = DataLoader(
         val_dataset, shuffle=True, batch_size=minibatch_size)
 
-    return train_loader, val_loader
+    return train_loader, val_loader, index_to_vocab
 
 
 def setup_model(args):
@@ -106,8 +109,9 @@ def setup_optimizer(args, model):
     # Task: Initialize the loss function for predictions.
     # Also initialize your optimizer.
     # ===================================================== #
-    criterion = None
-    optimizer = None
+    LEARNING_RATE = 0.005
+    criterion = torch.nn.CrossEntropyLoss()
+    optimizer = torch.optim.SGD(model.paramters(), lr=LEARNING_RATE)
     return criterion, optimizer
 
 
@@ -180,7 +184,7 @@ def validate(args, model, loader, optimizer, criterion, device):
 
 
 def main(args):
-    device = utils.get_device(args.force_cpu)
+    device = data_utils.get_device(args.force_cpu)
 
     # load analogies for downstream eval
     external_val_analogies = utils.read_analogies(args.analogies_fn)
@@ -193,7 +197,7 @@ def main(args):
         return
 
     # get dataloaders
-    train_loader, val_loader = setup_dataloader(args)
+    train_loader, val_loader, i2v = setup_dataloader(args)
     loaders = {"train": train_loader, "val": val_loader}
 
     # build model
@@ -255,7 +259,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--output_dir", type=str,
                         help="where to save training outputs")
-    parser.add_argument("--data_dir", type=str,
+    parser.add_argument("--data_dir", type=str, default="books/",
                         help="where the book dataset is stored")
     parser.add_argument(
         "--downstream_eval",
@@ -278,7 +282,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--force_cpu", action="store_true", help="debug mode")
     parser.add_argument(
-        "--analogies_fn", type=str, help="filepath to the analogies json file"
+        "--analogies_fn", type=str, default="analogies_v3000_1309.json", help="filepath to the analogies json file"
     )
     parser.add_argument(
         "--word_vector_fn", type=str, help="filepath to store the learned word vectors",

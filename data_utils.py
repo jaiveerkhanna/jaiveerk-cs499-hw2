@@ -6,12 +6,14 @@ import tqdm
 import numpy as np
 from collections import Counter
 from spacy.lang.en import English
+import torch
 
 
 def process_book_dir(d, max_per_book=None):
     nlp = English()
     nlp.add_pipe("sentencizer")
-    nlp.max_length = 3293518  # we aren't doing any heavy parsing or anything; set based on biggest book
+    # we aren't doing any heavy parsing or anything; set based on biggest book
+    nlp.max_length = 3293518
     processed_text_lines = []
     n_files = 0
     for root, dirs, fns in os.walk(d):
@@ -110,7 +112,8 @@ def save_word2vec_format(fname, model, i2v):
     print("Saving word vectors to file...")  # DEBUG
     with gensim.utils.smart_open(fname, "wb") as fout:
         fout.write(
-            gensim.utils.to_utf8("%d %d\n" % (model.vocab_size, model.embedding_dim))
+            gensim.utils.to_utf8("%d %d\n" %
+                                 (model.vocab_size, model.embedding_dim))
         )
         # store in sorted order: most frequent words at the top
         for index in tqdm.tqdm(range(len(i2v))):
@@ -159,3 +162,20 @@ def encode_data(data, v2i, seq_len):
     print("INFO: encoded %d sentences without regard to order" % idx)
 
     return x, lens
+
+
+def get_device(force_cpu, status=True):
+    # if not force_cpu and torch.backends.mps.is_available():
+    # 	device = torch.device('mps')
+    # 	if status:
+    # 		print("Using MPS")
+    # elif not force_cpu and torch.cuda.is_available():
+    if not force_cpu and torch.cuda.is_available():
+        device = torch.device("cuda")
+        if status:
+            print("Using CUDA")
+    else:
+        device = torch.device("cpu")
+        if status:
+            print("Using CPU")
+    return device
