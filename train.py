@@ -8,6 +8,7 @@ from eval_utils import downstream_validation
 import utils
 import data_utils
 import numpy as np
+import model
 
 
 def setup_dataloader(args):
@@ -69,12 +70,13 @@ def setup_dataloader(args):
         train_np_x), torch.from_numpy(train_np_y))
     # val_dataset =
 
-    minibatch_size = 10
+    minibatch_size = args.batch_size
 
     train_loader = DataLoader(
         train_dataset, shuffle=True, batch_size=minibatch_size)
     val_loader = DataLoader(
         val_dataset, shuffle=True, batch_size=minibatch_size)
+
     return train_loader, val_loader
 
 
@@ -86,8 +88,12 @@ def setup_model(args):
     # ================== TODO: CODE HERE ================== #
     # Task: Initialize your CBOW or Skip-Gram model.
     # ===================================================== #
-    model = None
-    return model
+
+    EMBEDDING_DIM = 100
+    VOCAB_SIZE = args.vocab_size
+
+    CBOW_model = model.CBOW(VOCAB_SIZE, EMBEDDING_DIM)
+    return CBOW_model
 
 
 def setup_optimizer(args, model):
