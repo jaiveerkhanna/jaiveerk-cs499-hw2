@@ -48,53 +48,77 @@ def setup_dataloader(args):
     # dataloaders.
     # ===================================================== #
 
-    print("Total data size =")
-    print(lens[4])
-    print()
+    context_size = 2
+    number_of_entries = lens.size * suggested_padding_len
+    # print("Total data size =")
+    # print(lens.size*suggested_padding_len)
 
-    context_size = 4
-    input_table = []  # Set of words associated with one
-    output_table = []  # target word
+    # Set of words (input) associated with one target word (output)
+    input_table = np.zeros((number_of_entries, context_size*2), dtype=np.int32)
+    output_table = np.zeros((number_of_entries), dtype=np.int32)
+
+    entry_idx = 0
     # Step 1: lets loop through the sentences and create pairs
     for sentence in encoded_sentences:
         # Within each sentence, we will create sentence length number of input/output combinations
         for target in range(len(sentence)):
             context_words = set()
-            target_word = [sentence[target]]
-            for context_word_id in range(target-context_size, target):
-                if (context_word_id < 0):
+            target_word = sentence[target]
+            for context_word_id in range(target-context_size, target+context_size+1):
+                if (context_word_id < 0 or context_word_id >= len(sentence) or context_word_id == target):
                     continue
                 context_words.add(sentence[context_word_id])
-            input_table.append(list(context_words))
-            output_table.append(target_word)
 
+            # Make context_words size 2*context
+            context_words = list(context_words)
+            while len(context_words) < (context_size*2):
+                context_words.append(0)
+            input_table[entry_idx] = list(context_words)
+            output_table[entry_idx] = target_word
+            entry_idx += 1
+
+    # Examine the shape of our input and ouput tables
     print("Example of input/output table")
-    print(input_table[4])
-    print(output_table[4])
+    print(input_table.shape)
+    print(output_table.shape)
 
-    x_tensor = torch.as_tensor(input_table, dtype=torch.int32)
-    y_tensor = torch.as_tensor(output_table, dtype=torch.int32)
+    # Create input/output tensors
+    x_tensor = torch.from_numpy(
+        input_table)
+    y_tensor = torch.from_numpy(output_table)
 
-    print("Total Inputs")
-    print(len(input_table))
-    print("X Tensor Created:")
+    # Test the creation of tensors
+    print("X Tensor Created (Shape):")
+    print(x_tensor.shape)
+
+    print("X Tensor Created (Stride):")
     print(x_tensor.stride())
-    print("Y Tensor Created:")
-    print(y_tensor)
+
+    print("Y Tensor Created (Shape):")
+    print(y_tensor.shape)
+
+    print("Y Tensor Created (Stride):")
+    print(y_tensor.stride())
 
     # Does this make sense
     # input_size = len(input_table)
     # train_np_x = np.zeros((input_size, context_size), dtype=np.int32)
     # train_np_y = np.zeros((input_size), dtype=np.int32)
 
+    # x_tensor = torch.as_tensor(input_table, dtype=torch.int32)
+    # y_tensor = torch.as_tensor(output_table, dtype=torch.int32)
+
     # x_tensor = torch.from_numpy(
     #     train_np_x)
     # y_tensor = torch.from_numpy(train_np_y)
 
-    train_dataset = TensorDataset(x_tensor, y_tensor)
+    dataset = TensorDataset(x_tensor, y_tensor)
 
-# WRONG WRONG WRONG --> just doing to get code to run
-    val_dataset = train_dataset
+    # https://stackoverflow.com/questions/50544730/how-do-i-split-a-custom-dataset-into-training-and-test-datasets
+    train_size = int(0.8 * len(dataset))
+    test_size = len(dataset) - train_size
+    train_dataset, val_dataset = torch.utils.data.random_split(
+        dataset, [train_size, test_size])
 
     minibatch_size = args.batch_size
 
@@ -133,8 +157,12 @@ def setup_optimizer(args, model):
     # Also initialize your optimizer.
     # ===================================================== #
     LEARNING_RATE = 0.005
+    # able to do this because i'm not doing skip gram
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(model.paramters(), lr=LEARNING_RATE)
+
+    # Compare both optimizers and pick better one
+    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
     return criterion, optimizer
 
 
@@ -146,6 +174,8 @@ def train_epoch(
     criterion,
     device,
     training=True,
+
+
 ):
     model.train()
     epoch_loss = 0.0

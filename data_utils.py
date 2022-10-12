@@ -129,7 +129,7 @@ def save_word2vec_format(fname, model, i2v):
 def encode_data(data, v2i, seq_len):
     num_insts = sum([len(ep) for ep in data])
     x = np.zeros((num_insts, seq_len), dtype=np.int32)
-    lens = np.zeros((num_insts, 1), dtype=np.int32)
+    lens = np.zeros((num_insts), dtype=np.int32)
 
     idx = 0
     n_early_cutoff = 0
@@ -149,7 +149,7 @@ def encode_data(data, v2i, seq_len):
                         n_early_cutoff += 1
                     break
         x[idx][jdx] = v2i["<end>"]
-        lens[idx][0] = jdx
+        lens[idx] = jdx
         idx += 1
     print(
         "INFO: had to represent %d/%d (%.4f) tokens as unk with vocab limit %d"

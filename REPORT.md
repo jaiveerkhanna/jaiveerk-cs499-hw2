@@ -19,6 +19,27 @@ Hyperparameters Chosen:
     - LEARNING_RATE = 0.005
 
 
+Finally, in this report I'd also like you to do a little bit of analysis of the released code and discuss what's going on. In particular, what are the in vitro and in vivo tasks being evaluated? On what metrics are they measured? If there are assumptions or simplifications that can affect the metrics, what are they and what might go "wrong" with them that over- or under-estimate model performance?
+
+The in vitro tasks being analyzed are 
+
+
+
 
 QUESTIONS:
 - How to deal with sets instead of arrays of fixed size
+
+
+CONSIDER:
+- Dropping all padding settings
+
+CLASS:
+- What should we expect for downstream eval task?
+- One-Hot vs. Multi-Hot
+    - CBOW inputs/outputs --> need to slide over entire which maps (context window) to (output)
+- Loss function
+    - Binary Cross Entropy expects logits over whole vocabulary --> CBOW
+    - Prediction of model will be vocabulary by batch, targets expect batch by vocabulary
+
+
+sklearn function to do train test split
