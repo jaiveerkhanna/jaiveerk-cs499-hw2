@@ -48,8 +48,13 @@ def setup_dataloader(args):
     # dataloaders.
     # ===================================================== #
 
+    print("Total data size =")
+    print(lens[4])
+    print()
+
     context_size = 4
-    input_data = []  # Set of words associated with one
+    input_table = []  # Set of words associated with one
+    output_table = []  # target word
     # Step 1: lets loop through the sentences and create pairs
     for sentence in encoded_sentences:
         # Within each sentence, we will create sentence length number of input/output combinations
@@ -60,17 +65,35 @@ def setup_dataloader(args):
                 if (context_word_id < 0):
                     continue
                 context_words.add(sentence[context_word_id])
-            input_data.append(context_words, target_word)
+            input_table.append(list(context_words))
+            output_table.append(target_word)
+
+    print("Example of input/output table")
+    print(input_table[4])
+    print(output_table[4])
+
+    x_tensor = torch.as_tensor(input_table, dtype=torch.int32)
+    y_tensor = torch.as_tensor(output_table, dtype=torch.int32)
+
+    print("Total Inputs")
+    print(len(input_table))
+    print("X Tensor Created:")
+    print(x_tensor.stride())
+    print("Y Tensor Created:")
+    print(y_tensor)
 
     # Does this make sense
-    input_size = len(input_data)
-    train_np_x = np.zeros((input_size, context_size), dtype=np.int32)
-    train_np_y = np.zeros((input_size), dtype=np.int32)
+    # input_size = len(input_table)
+    # train_np_x = np.zeros((input_size, context_size), dtype=np.int32)
+    # train_np_y = np.zeros((input_size), dtype=np.int32)
 
-    train_dataset = TensorDataset(torch.from_numpy(
-        train_np_x), torch.from_numpy(train_np_y))
+    # x_tensor = torch.from_numpy(
+    #     train_np_x)
+    # y_tensor = torch.from_numpy(train_np_y)
 
-    # WRONG WRONG WRONG --> just doing to get code to run
+    train_dataset = TensorDataset(x_tensor, y_tensor)
+
+# WRONG WRONG WRONG --> just doing to get code to run
     val_dataset = train_dataset
 
     minibatch_size = args.batch_size
