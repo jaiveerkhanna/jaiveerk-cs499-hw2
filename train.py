@@ -10,6 +10,7 @@ import data_utils
 import numpy as np
 import model
 from torch.utils.data import TensorDataset, DataLoader  # pytorch
+import matplotlib.pyplot as plt  # plotting
 
 
 def setup_dataloader(args):
@@ -78,9 +79,9 @@ def setup_dataloader(args):
             entry_idx += 1
 
     # Examine the shape of our input and ouput tables
-    print("Example of input/output table")
-    print(input_table.shape)
-    print(output_table.shape)
+    # print("Example of input/output table")
+    # print(input_table.shape)
+    # print(output_table.shape)
 
     # Create input/output tensors
     x_tensor = torch.from_numpy(
@@ -248,6 +249,12 @@ def main(args):
     # get optimizer
     criterion, optimizer = setup_optimizer(args, model)
 
+    # Set up tables to collect train/val loss/acc
+    train_loss_summary = []
+    val_loss_summary = []
+    train_acc_summary = []
+    val_acc_summary = []
+
     for epoch in range(args.num_epochs):
         # train model for a single epoch
         print(f"Epoch {epoch}")
@@ -261,6 +268,9 @@ def main(args):
         )
 
         print(f"train loss : {train_loss} | train acc: {train_acc}")
+        # Within outer for loop, keep track of train loss/acc data
+        train_loss_summary.extend([train_loss])
+        train_acc_summary.extend([train_acc])
 
         if epoch % args.val_every == 0 or epoch == (args.num_epochs-1):
             val_loss, val_acc = validate(
@@ -272,28 +282,50 @@ def main(args):
                 device,
             )
             print(f"val loss : {val_loss} | val acc: {val_acc}")
+            # within inner for loop, keep track of val loss/acc data
+            val_loss_summary.extend([val_loss])
+            val_acc_summary.extend([val_acc])
 
-            # ======================= NOTE ======================== #
-            # Saving the word vectors to disk and running the eval
-            # can be costly when you do it multiple times. You could
-            # change this to run only when your training has concluded.
-            # However, incremental saving means if something crashes
-            # later or you get bored and kill the process you'll still
-            # have a word vector file and some results.
-            # ===================================================== #
+        # ======================= NOTE ======================== #
+        # Saving the word vectors to disk and running the eval
+        # can be costly when you do it multiple times. You could
+        # change this to run only when your training has concluded.
+        # However, incremental saving means if something crashes
+        # later or you get bored and kill the process you'll still
+        # have a word vector file and some results.
+        # ===================================================== #
 
-            # save word vectors
-            word_vec_file = os.path.join(args.outputs_dir, args.word_vector_fn)
-            print("saving word vec to ", word_vec_file)
-            data_utils.save_word2vec_format(word_vec_file, model, i2v)
+        # save word vectors
+        word_vec_file = os.path.join(args.outputs_dir, args.word_vector_fn)
+        print("saving word vec to ", word_vec_file)
+        data_utils.save_word2vec_format(word_vec_file, model, i2v)
 
-            # evaluate learned embeddings on a downstream task
-            downstream_validation(word_vec_file, external_val_analogies)
+        # evaluate learned embeddings on a downstream task
+        downstream_validation(word_vec_file, external_val_analogies)
 
         if epoch % args.save_every == 0 or epoch == (args.num_epochs-1):
             ckpt_file = os.path.join(args.outputs_dir, "model.ckpt")
             print("saving model to ", ckpt_file)
             torch.save(model, ckpt_file)
+
+    # outside the for loop, print out the summary tables
+    # https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html
+
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+
+    #
+    ax1.set_title("train loss")
+    ax1.plot(train_loss_summary, label="train")
+    #
+    ax2.set_title("val loss")
+    ax2.plot(val_loss_summary, label="val")
+    #
+    ax3.set_title("train accuracy")
+    ax3.plot(train_acc_summary, label="train")
+    #
+    ax4.set_title("val accuracy")
+    ax4.plot(val_acc_summary, label="val")
+    plt.show()
 
 
 if __name__ == "__main__":

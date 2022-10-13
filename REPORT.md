@@ -2,7 +2,8 @@
 
 
 Implementation Choices:
-
+Input/Output Table:
+- I chose to only use entries that 
 
 Hyperparameters Chosen:
 - Context Window:
@@ -21,7 +22,12 @@ Hyperparameters Chosen:
 
 Finally, in this report I'd also like you to do a little bit of analysis of the released code and discuss what's going on. In particular, what are the in vitro and in vivo tasks being evaluated? On what metrics are they measured? If there are assumptions or simplifications that can affect the metrics, what are they and what might go "wrong" with them that over- or under-estimate model performance?
 
-The in vitro tasks being analyzed are 
+The in vitro task being evaluated is how well the model can predict a word given its context. The model takes a input output pair, inserts the input into the model, and compares the output that the model generated with the actual output from the original input/output pair. There are two comparisons being made: accuracy and loss (which I will discuss in further detail below)
+
+This is being measured on both "accuracy" and "loss". Accuracy is defined by if the predicted matches the actual, and the loss used in my implementation is Cross Entropy loss (which works for CBOW) (More explanation above under "Hyperparameters")
+
+
+The in vivo task considers how the model performs on a task it was NOT specifically trained on. 
 
 
 
@@ -42,4 +48,3 @@ CLASS:
     - Prediction of model will be vocabulary by batch, targets expect batch by vocabulary
 
 
-sklearn function to do train test split
