@@ -15,14 +15,14 @@ class CBOW(torch.nn.Module):
         self.embedding_dim = embedding_dim
 
         # Create Embedding Layer
-        self.embeddings = torch.nn.Embedding(vocab_size, embedding_dim)
+        self.embed = torch.nn.Embedding(vocab_size, embedding_dim)
 
         # Create a Liner layer that will output the predicted word
         self.linear = torch.nn.Linear(embedding_dim, vocab_size)
 
-    def forward(self, inputs):
+    def forward(self, inputs, labels):
         # Create embeddings for each individual context word and then sum
-        embeds = torch.sum(self.embeddings(inputs), dim=1)
+        embeds = torch.sum(self.embed(inputs), dim=1)
 
         # output is then a linear combination of these
         out = self.linear(embeds)

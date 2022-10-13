@@ -87,30 +87,18 @@ def setup_dataloader(args):
         input_table)
     y_tensor = torch.from_numpy(output_table)
 
-    # Test the creation of tensors
-    print("X Tensor Created (Shape):")
-    print(x_tensor.shape)
+    # # Test the creation of tensors
+    # print("X Tensor Created (Shape):")
+    # print(x_tensor.shape)
 
-    print("X Tensor Created (Stride):")
-    print(x_tensor.stride())
+    # print("X Tensor Created (Stride):")
+    # print(x_tensor.stride())
 
-    print("Y Tensor Created (Shape):")
-    print(y_tensor.shape)
+    # print("Y Tensor Created (Shape):")
+    # print(y_tensor.shape)
 
-    print("Y Tensor Created (Stride):")
-    print(y_tensor.stride())
-
-    # Does this make sense
-    # input_size = len(input_table)
-    # train_np_x = np.zeros((input_size, context_size), dtype=np.int32)
-    # train_np_y = np.zeros((input_size), dtype=np.int32)
-
-    # x_tensor = torch.as_tensor(input_table, dtype=torch.int32)
-    # y_tensor = torch.as_tensor(output_table, dtype=torch.int32)
-
-    # x_tensor = torch.from_numpy(
-    #     train_np_x)
-    # y_tensor = torch.from_numpy(train_np_y)
+    # print("Y Tensor Created (Stride):")
+    # print(y_tensor.stride())
 
     dataset = TensorDataset(x_tensor, y_tensor)
 
@@ -240,7 +228,7 @@ def main(args):
     device = data_utils.get_device(args.force_cpu)
 
     # load analogies for downstream eval
-    external_val_analogies = utils.read_analogies(args.analogies_fn)
+    external_val_analogies = data_utils.read_analogies(args.analogies_fn)
 
     if args.downstream_eval:
         word_vec_file = os.path.join(args.outputs_dir, args.word_vector_fn)
@@ -274,7 +262,7 @@ def main(args):
 
         print(f"train loss : {train_loss} | train acc: {train_acc}")
 
-        if epoch % args.val_every == 0:
+        if epoch % args.val_every == 0 or epoch == (args.num_epochs-1):
             val_loss, val_acc = validate(
                 args,
                 model,
@@ -297,20 +285,20 @@ def main(args):
             # save word vectors
             word_vec_file = os.path.join(args.outputs_dir, args.word_vector_fn)
             print("saving word vec to ", word_vec_file)
-            utils.save_word2vec_format(word_vec_file, model, i2v)
+            data_utils.save_word2vec_format(word_vec_file, model, i2v)
 
             # evaluate learned embeddings on a downstream task
             downstream_validation(word_vec_file, external_val_analogies)
 
-        if epoch % args.save_every == 0:
-            ckpt_file = os.path.join(args.output_dir, "model.ckpt")
+        if epoch % args.save_every == 0 or epoch == (args.num_epochs-1):
+            ckpt_file = os.path.join(args.outputs_dir, "model.ckpt")
             print("saving model to ", ckpt_file)
             torch.save(model, ckpt_file)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output_dir", type=str,
+    parser.add_argument("--outputs_dir", default="", type=str,
                         help="where to save training outputs")
     parser.add_argument("--data_dir", type=str, default="books/",
                         help="where the book dataset is stored")
