@@ -49,7 +49,7 @@ def setup_dataloader(args):
     # dataloaders.
     # ===================================================== #
 
-    context_size = 2
+    context_size = 4
     number_of_entries = int(lens.size / 2) * suggested_padding_len
     # print("Total data size =")
     # print(lens.size*suggested_padding_len)
@@ -127,8 +127,8 @@ def setup_dataloader(args):
     dataset = TensorDataset(x_tensor, y_tensor)
 
     # https://stackoverflow.com/questions/50544730/how-do-i-split-a-custom-dataset-into-training-and-test-datasets
-    train_size = int(0.8 * len(dataset))
-    test_size = len(dataset) - train_size
+    train_size = int(0.8 * entry_idx)
+    test_size = entry_idx - train_size
     train_dataset, val_dataset = torch.utils.data.random_split(
         dataset, [train_size, test_size])
 
@@ -151,7 +151,7 @@ def setup_model(args):
     # Task: Initialize your CBOW or Skip-Gram model.
     # ===================================================== #
 
-    EMBEDDING_DIM = 256
+    EMBEDDING_DIM = 128
     VOCAB_SIZE = args.vocab_size
 
     CBOW_model = model.CBOW(VOCAB_SIZE, EMBEDDING_DIM)

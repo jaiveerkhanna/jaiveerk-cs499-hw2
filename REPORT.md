@@ -29,7 +29,7 @@ Hyperparameters Chosen:
     - SGD initially, but eventually switched to Adam after reviewing project 1 discussion and talks about how Adam might be a more efficient way to do this. After switching, I found this to be true
     - LEARNING_RATE = 0.01
 
-Average Epoch Training Time given above hyperparameters on 30 books: 3 min
+Average Epoch Training Time given above hyperparameters on 30 books: ~ 3 min
 
 (10pt continue) Finally, in this report I'd also like you to do a little bit of analysis of the released code and discuss what's going on. In particular, what are the in vitro and in vivo tasks being evaluated? On what metrics are they measured? If there are assumptions or simplifications that can affect the metrics, what are they and what might go "wrong" with them that over- or under-estimate model performance?
 
@@ -49,3 +49,14 @@ Another reason why these metrics might be a bit tough is because, if one were to
 
 BONUS:
 
+5pt) We have hypothesized that the context window size affects syntactic versus semantic performance. Evaluate that hypothesis with your model by varying the context window and looking for relationships to syntax versus semantic analogical task performance.
+
+I varied the context window size a lot during testing, and here are some of the results I was able to obtain:
+
+Context Size:2 
+
+Context Size: 4
+
+Context Size: 6
+
+Summary: It seems like the lower context sizes were able to handle syntactic performance better, with larger context sizes being better equipped at handling semantic performance. This is pretty in line with our results from class!
