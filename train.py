@@ -50,7 +50,7 @@ def setup_dataloader(args):
     # ===================================================== #
 
     context_size = 2
-    number_of_entries = lens.size * suggested_padding_len
+    number_of_entries = int(lens.size / 2) * suggested_padding_len
     # print("Total data size =")
     # print(lens.size*suggested_padding_len)
 
@@ -58,25 +58,48 @@ def setup_dataloader(args):
     input_table = np.zeros((number_of_entries, context_size*2), dtype=np.int32)
     output_table = np.zeros((number_of_entries), dtype=np.int32)
 
+    sentence_idx = 0
     entry_idx = 0
     # Step 1: lets loop through the sentences and create pairs
     for sentence in encoded_sentences:
+        if sentence_idx > (lens.size / 2):
+            break
         # Within each sentence, we will create sentence length number of input/output combinations
-        for target in range(len(sentence)):
+        for target in range(lens[sentence_idx]+1):
             context_words = set()
             target_word = sentence[target]
+
+            # don't create input/output pairs for padding
+            if target_word == 0:
+                continue
+
             for context_word_id in range(target-context_size, target+context_size+1):
                 if (context_word_id < 0 or context_word_id >= len(sentence) or context_word_id == target):
                     continue
                 context_words.add(sentence[context_word_id])
 
+            # eliminate useless contexts (just the padding)
+            if 0 in context_words and len(context_words) == 1:
+                # print("empty context")
+                continue
+
+            # Eliminate words where context_size is too small
+            if len(context_words) < context_size:
+                continue
+
             # Make context_words size 2*context
             context_words = list(context_words)
+
             while len(context_words) < (context_size*2):
                 context_words.append(0)
             input_table[entry_idx] = list(context_words)
             output_table[entry_idx] = target_word
             entry_idx += 1
+        sentence_idx += 1
+
+    # Reshape input/output tables to only be the size of entries we actually created
+    input_table = input_table[:entry_idx]
+    output_table = output_table[:entry_idx]
 
     # Examine the shape of our input and ouput tables
     # print("Example of input/output table")
@@ -128,7 +151,7 @@ def setup_model(args):
     # Task: Initialize your CBOW or Skip-Gram model.
     # ===================================================== #
 
-    EMBEDDING_DIM = 100
+    EMBEDDING_DIM = 256
     VOCAB_SIZE = args.vocab_size
 
     CBOW_model = model.CBOW(VOCAB_SIZE, EMBEDDING_DIM)
@@ -145,12 +168,12 @@ def setup_optimizer(args, model):
     # Task: Initialize the loss function for predictions.
     # Also initialize your optimizer.
     # ===================================================== #
-    LEARNING_RATE = 0.005
+    LEARNING_RATE = 0.01
     # able to do this because i'm not doing skip gram
     criterion = torch.nn.CrossEntropyLoss()
 
     # Compare both optimizers and pick better one
-    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
+    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
     # optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
     return criterion, optimizer
 
@@ -351,7 +374,7 @@ if __name__ == "__main__":
         "--vocab_size", type=int, default=3000, help="size of vocabulary"
     )
     parser.add_argument(
-        "--batch_size", type=int, default=32, help="size of each batch in loader"
+        "--batch_size", type=int, default=256, help="size of each batch in loader"
     )
     parser.add_argument("--force_cpu", action="store_true", help="debug mode")
     parser.add_argument(
