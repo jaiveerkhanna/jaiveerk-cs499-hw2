@@ -14,20 +14,21 @@ Train/Test Split:
 - Just made first 80% training, rather than randomizing. I figured that because the books were parsed in order, the first 80% of data will contain words from different books than the last 20% and thus we will still be able to test on different data distributions
 
 Hyperparameters Chosen:
-- Context Size: 2
+- Context Size: 4
     - Context window looks both to the left and to the right of target word. This is similar to the CBOW implementation and makes sense to me as I feel like bidirectional context is more aligned with firth's "know a word by its company" than just looking in one direction. Often in language, the words before AND after a word are essential to its meaning.
     - For a context size 2, it means we look 2 words forward and backword for a total context size of 4. This default performed well, but i discuss how other context sizes performed in the BONUS section.
+    - Overall, think context size 4 was the best balance and this was what I ultimately decided to use.
 - minibatch size:
     - Changed default to 256 because it was just too slow at 32. Considered changing the things that I included in my input/output table but ultimately settled on this implementation
 - Vocab Size (fixed at 3000 by project)
 - Embedding dim
     - currently set at 128 (was 100 but decided to keep it as a multiple of 2 --> pretty sure this is good for computation speed after discussion in class). Furthermore, was suffering on performance at the 100 level, 128 takes a bit more time but improved performance, will also be experimenting with higher embedding dims as we need to represent a vocab of size 3000
-    - UPDATE: ended up switching embedding dim to 256 after researching onling. Typically word embeddings range 100-300 size because capturing the essence of the word is hard to do sub 100 and diminishing returns above 300. While 128 was working well, I experimented with 256 and this worked better. Since our model is pretty simple, it is vital for the embedding layer to be working well and I spent a good amount of time tweaking this
+    - UPDATE: ended up switching embedding dim to 256 after researching online. Typically word embeddings range 100-300 size because capturing the essence of the word is hard to do sub 100 and diminishing returns above 300. While 128 was working well, I experimented with 256 and this worked better. Since our model is pretty simple, it is vital for the embedding layer to be working well and I spent a good amount of time tweaking this
 - Loss Criterion
-    - CrossEntropy Loss
+    - CrossEntropy Loss --> works fine for this task
 - Optimizer
     - SGD initially, but eventually switched to Adam after reviewing project 1 discussion and talks about how Adam might be a more efficient way to do this. After switching, I found this to be true
-    - LEARNING_RATE = 0.01
+    - LEARNING_RATE = 0.01 --> this was good and i experimented with 0.005 as well but for the 30 epochs we were using 0.01 was more effective. Could consider lowering if I had the computational power to run this longer etc.
 
 Average Epoch Training Time given above hyperparameters on 30 books: ~ 3 min
 
@@ -49,14 +50,34 @@ Another reason why these metrics might be a bit tough is because, if one were to
 
 BONUS:
 
-5pt) We have hypothesized that the context window size affects syntactic versus semantic performance. Evaluate that hypothesis with your model by varying the context window and looking for relationships to syntax versus semantic analogical task performance.
+(5pt) We have hypothesized that the context window size affects syntactic versus semantic performance. Evaluate that hypothesis with your model by varying the context window and looking for relationships to syntax versus semantic analogical task performance.
 
-I varied the context window size a lot during testing, and here are some of the results I was able to obtain:
+I varied the context window size a lot during testing, and here are some of the key results I was able to obtain (there are images for the final output of all 3 context sizes in the "results" folder)
 
 Context Size:2 
+    - Semantic
+        - Exact: 0.0021      
+        - MRR: 0.0122
+    - Syntactic
+        - Exact: 0.0294     
+        - MRR: 0.0640
+    - Here, Syntactic performance clearly trumps semantic, likely because we are only looking two tokens to the left and right of a word, and so its syntactic structure is much more likely to be understood than how it is being used in the larger sentence (semantics)
 
 Context Size: 4
-
+    - Semantic
+        - Exact: 0.0031      
+        - MRR: 0.0115
+    - Syntactic
+        - Exact: 0.0324     
+        - MRR: 0.0645
+    - With a larger context size, we saw an increase in semantic performance for exact. Our MRR score was a bit lower but not as significant as our exact performance increase. This makes sense, as now there is a larger context. Interestingly, Syntactic performance also increased, indicating that 4 word left/right context might be better for both. Likely, there are important syntactic components that get ommited when only looking two tokens to the left and right of a given word.
 Context Size: 6
+- Semantic
+        - Exact: 0.0041      
+        - MRR: 0.0108
+    - Syntactic
+        - Exact: 0.0059     
+        - MRR: 0.0277
+    - With a context size of 6, we finally start to see the expected dip in syntactic performance (context has gotten too large and some of the details get obscured). However, we continue to see increases in semantic performance, as expected. With more words in the context, there is a greater chance to understand the MEANING of a word, above the way it was used.
 
-Summary: It seems like the lower context sizes were able to handle syntactic performance better, with larger context sizes being better equipped at handling semantic performance. This is pretty in line with our results from class!
+Summary: It seems like the lower context sizes were able to handle syntactic performance better, with larger context sizes being better equipped at handling semantic performance. This is pretty in line with our discussions from class! I ultimately would use a context size of 4 as it balances both semantic and syntactic performance pretty well!

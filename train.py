@@ -151,7 +151,7 @@ def setup_model(args):
     # Task: Initialize your CBOW or Skip-Gram model.
     # ===================================================== #
 
-    EMBEDDING_DIM = 128
+    EMBEDDING_DIM = 256
     VOCAB_SIZE = args.vocab_size
 
     CBOW_model = model.CBOW(VOCAB_SIZE, EMBEDDING_DIM)
